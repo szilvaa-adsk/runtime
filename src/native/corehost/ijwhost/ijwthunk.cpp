@@ -34,7 +34,7 @@ namespace
 HANDLE g_heapHandle;
 
 bool patch_vtable_entries(PEDecoder& pe)
-{    
+{
     size_t numFixupRecords;
     IMAGE_COR_VTABLEFIXUP* pFixupTable = pe.GetVTableFixups(&numFixupRecords);
 
@@ -68,7 +68,7 @@ bool patch_vtable_entries(PEDecoder& pe)
     }
 
     trace::setup();
-    
+
     error_writer_scope_t writer_scope(swallow_trace);
 
     size_t currentThunk = 0;
@@ -115,25 +115,37 @@ extern "C" std::uintptr_t __stdcall start_runtime_and_get_target_address(std::ui
 {
     trace::setup();
     error_writer_scope_t writer_scope(swallow_trace);
-    
+
     bootstrap_thunk *pThunk = bootstrap_thunk::get_thunk_from_cookie(cookie);
     load_in_memory_assembly_fn loadInMemoryAssembly;
     pal::dll_t moduleHandle = pThunk->get_dll_handle();
-    pal::hresult_t status = get_load_in_memory_assembly_delegate(moduleHandle, &loadInMemoryAssembly);
-
-    if (status != StatusCode::Success)
+    // This is a workaround for https://github.com/dotnet/runtime/issues/61105
+    // Our hosting process will specify a dll name (e.g. acdbmgd.dll) in the IJWLOADER
+    // environment variable.
+    auto ijwLoaderName = getenv("IJWLOADER");
+    pal::dll_t ijwLoaderModule = ijwLoaderName ? GetModuleHandle(ijwLoaderName) : nullptr;
+    if (ijwLoaderModule == nullptr)
     {
-        // If we ignore the failure to patch bootstrap thunks we will come to this same
-        // function again, causing an infinite loop of "Failed to start the .NET runtime" errors.
-        // As we were taken here via an entry point with arbitrary signature,
-        // there's no way of returning the error code so we just throw it.
+        pal::hresult_t status = get_load_in_memory_assembly_delegate(moduleHandle, &loadInMemoryAssembly);
 
-        trace::error(_X("Failed to start the .NET runtime. Error code %d"), status);
+        if (status != StatusCode::Success)
+        {
+            // If we ignore the failure to patch bootstrap thunks we will come to this same
+            // function again, causing an infinite loop of "Failed to start the .NET runtime" errors.
+            // As we were taken here via an entry point with arbitrary signature,
+            // there's no way of returning the error code so we just throw it.
+
+            trace::error(_X("Failed to start the .NET runtime. Error code %d"), status);
 
 #pragma warning (push)
 #pragma warning (disable: 4297)
-        throw status;
+            throw status;
 #pragma warning (pop)
+        }
+    }
+    else
+    {
+        loadInMemoryAssembly = (load_in_memory_assembly_fn)pal::get_symbol(ijwLoaderModule, "ijwLoadInMemoryAssembly");
     }
 
     pal::string_t app_path;
