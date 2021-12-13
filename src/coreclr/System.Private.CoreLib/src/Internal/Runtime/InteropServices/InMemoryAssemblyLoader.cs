@@ -4,6 +4,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Internal.Runtime.InteropServices
 {
@@ -17,6 +18,10 @@ namespace Internal.Runtime.InteropServices
 
         private static bool InitializeIsSupported() => AppContext.TryGetSwitch("System.Runtime.InteropServices.EnableCppCLIHostActivation", out bool isSupported) ? isSupported : true;
 #endif
+        /// <summary>
+        /// Used to create the AssemblyLoadContext to load the in-memory assembly.
+        /// </summary>
+        public static Func<string, AssemblyLoadContext>? AssemblyLoadContextFactory { get; set; }
 
         /// <summary>
         /// Loads into an isolated AssemblyLoadContext an assembly that has already been loaded into memory by the OS loader as a native module.
@@ -37,7 +42,7 @@ namespace Internal.Runtime.InteropServices
 
             // We don't cache the ALCs here since each IJW assembly will call this method at most once
             // (the load process rewrites the stubs that call here to call the actual methods they're supposed to)
-            AssemblyLoadContext context = new IsolatedComponentLoadContext(assemblyPathString);
+            var context = AssemblyLoadContextFactory?.Invoke(assemblyPathString) ?? new IsolatedComponentLoadContext(assemblyPathString);
             context.LoadFromInMemoryModule(moduleHandle);
 #else
             throw new PlatformNotSupportedException();

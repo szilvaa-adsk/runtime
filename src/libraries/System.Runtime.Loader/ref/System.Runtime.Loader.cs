@@ -49,6 +49,7 @@ namespace System.Runtime.Loader
         protected AssemblyLoadContext(bool isCollectible) { }
         public AssemblyLoadContext(string? name, bool isCollectible = false) { }
         public static System.Collections.Generic.IEnumerable<System.Runtime.Loader.AssemblyLoadContext> All { get { throw null; } }
+        public static Func<string, AssemblyLoadContext>? MixedAssemblyLoadContextFactory {get => throw null; set => throw null;}
         public System.Collections.Generic.IEnumerable<System.Reflection.Assembly> Assemblies { get { throw null; } }
         public static System.Runtime.Loader.AssemblyLoadContext? CurrentContextualReflectionContext { get { throw null; } }
         public static System.Runtime.Loader.AssemblyLoadContext Default { get { throw null; } }

@@ -292,6 +292,31 @@ namespace System.Runtime.Loader
             }
         }
 
+        /// <summary>
+        /// Get or sets the function that is used to create the AssemblyLoadContext when a C++/CLI assembly
+        /// (an assembly that is native library and .net assembly at the same time) is loaded via its native entry point.
+        /// When the property is set to null (default) the mixed assembly is loaded such that its dependencies are isolated.
+        /// </summary>
+        public static Func<string, AssemblyLoadContext>? MixedAssemblyLoadContextFactory
+        {
+            get
+            {
+#if MONO
+                throw new PlatformNotSupportedException();
+#else
+                return Internal.Runtime.InteropServices.InMemoryAssemblyLoader.AssemblyLoadContextFactory;
+#endif
+            }
+            set
+            {
+#if MONO
+                throw new PlatformNotSupportedException();
+#else
+                Internal.Runtime.InteropServices.InMemoryAssemblyLoader.AssemblyLoadContextFactory = value;
+#endif
+            }
+        }
+
         // Helper to return AssemblyName corresponding to the path of an IL assembly
         public static AssemblyName GetAssemblyName(string assemblyPath)
         {
