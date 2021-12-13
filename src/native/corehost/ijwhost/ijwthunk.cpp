@@ -122,8 +122,10 @@ extern "C" std::uintptr_t __stdcall start_runtime_and_get_target_address(std::ui
     // This is a workaround for https://github.com/dotnet/runtime/issues/61105
     // Our hosting process will specify a dll name (e.g. acdbmgd.dll) in the IJWLOADER
     // environment variable.
-    auto ijwLoaderName = getenv("IJWLOADER");
-    pal::dll_t ijwLoaderModule = ijwLoaderName ? GetModuleHandle(ijwLoaderName) : nullptr;
+    pal::string_t ijwLoaderName;
+    pal::dll_t ijwLoaderModule = nullptr;
+    if (pal::getenv(L"IJWLOADER", &ijwLoaderName))
+        ijwLoaderModule = GetModuleHandleW(ijwLoaderName.c_str());
     if (ijwLoaderModule == nullptr)
     {
         pal::hresult_t status = get_load_in_memory_assembly_delegate(moduleHandle, &loadInMemoryAssembly);
