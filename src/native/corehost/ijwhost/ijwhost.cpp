@@ -36,11 +36,11 @@ pal::hresult_t get_load_in_memory_assembly_delegate(pal::dll_t handle, load_in_m
 
             pal::string_t config_path_local { strip_file_ext(mod_path) };
             config_path_local.append(_X(".runtimeconfig.json"));
-            //Check if config file exists and fallback to default is available.
+            //Check if config file exists and fallback to default if available.
             if (!pal::realpath(&config_path_local, true))
             {
                 pal::string_t default_config;
-                pal::getenv(_X("DOTNET_DEFAULT_RUNTIMECONFIG"), &default_config);
+                pal::getenv(_X("ACDOTNET_DEFAULT_RUNTIMECONFIG"), &default_config);
                 if (!default_config.empty())
                     config_path_local = std::move(default_config);
             }
